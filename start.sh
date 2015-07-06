@@ -15,8 +15,8 @@ if [ "$1" = 'postgres' ]; then
 
 		# check password first so we can ouptut the warning before postgres
 		# messes it up
-		if [ "$POSTGRES_PASSWORD" ]; then
-			pass="PASSWORD '$POSTGRES_PASSWORD'"
+		if [ "$DB_PASS" ]; then
+			pass="PASSWORD '$DB_PASS'"
 			authMethod=md5
 		else
 			# The - option suppresses leading tabs but *not* spaces. :)
@@ -29,7 +29,7 @@ if [ "$1" = 'postgres' ]; then
 				         effectively any other container on the same
 				         system.
 
-				         Use "-e POSTGRES_PASSWORD=password" to set
+				         Use "-e DB_PASS=password" to set
 				         it in "docker run".
 				****************************************************
 			EOWARN
@@ -38,26 +38,26 @@ if [ "$1" = 'postgres' ]; then
 			authMethod=trust
 		fi
 
-		: ${POSTGRES_USER:=postgres}
-		: ${POSTGRES_DB:=$POSTGRES_USER}
+		: ${DB_USER:=postgres}
+		: ${DB_NAME:=$DB_USER}
 
-		if [ "$POSTGRES_DB" != 'postgres' ]; then
-			sudo -u postgres -H postgres --single -D "$PGDATA" -jE <<-EOSQL
-				CREATE DATABASE "$POSTGRES_DB" ;
-			EOSQL
-			echo
+		if [ -n "$DB_USER" -a "$DB_USER" != 'postgres' ]; then
+			echo "Creating user \"${DB_USER}\"..."
+			echo "CREATE ROLE ${DB_USER} with LOGIN CREATEDB $pass ;" |
+				sudo -u postgres -H postgres --single -D "$PGDATA"  >/dev/null
+
 		fi
 
-		if [ "$POSTGRES_USER" = 'postgres' ]; then
-			op='ALTER'
-		else
-			op='CREATE'
+		if [ -n "$DB_NAME" -a "$DB_NAME" != 'postgres' ]; then
+			echo "Creating database \"${DB_NAME}\"..."
+			echo "CREATE DATABASE $DB_NAME WITH OWNER = ${DB_USER} ENCODING = 'UTF8' ;" |
+				sudo -u postgres -H postgres --single -D "$PGDATA"  >/dev/null
+
+			echo "Granting access to database \"${DB_NAME}\" for user \"${DB_USER}\"..."
+			echo "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME to ${DB_USER};" |
+				sudo -u postgres -H postgres --single -D "$PGDATA"  >/dev/null
 		fi
 
-		sudo -u postgres -H postgres --single -D "$PGDATA" -jE <<-EOSQL
-			$op USER "$POSTGRES_USER" WITH SUPERUSER $pass ;
-		EOSQL
-		echo
 
 		{ echo; echo "host all all 0.0.0.0/0 $authMethod"; } >> "$PGDATA"/pg_hba.conf
 
@@ -68,6 +68,7 @@ if [ "$1" = 'postgres' ]; then
 		fi
 	fi
 
+	echo "Starting PostgreSQL server..."
 	sudo -u postgres -H postgres -D "$PGDATA"
 fi
 
