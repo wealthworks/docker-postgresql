@@ -40,6 +40,7 @@ if [ "$1" = 'postgres' ]; then
 
 		: ${DB_USER:=postgres}
 		: ${DB_NAME:=$DB_USER}
+		: ${DB_SCHEMA:=$DB_USER}
 
 		if [ -n "$DB_USER" -a "$DB_USER" != 'postgres' ]; then
 			echo "Creating user \"${DB_USER}\"..."
@@ -56,6 +57,12 @@ if [ "$1" = 'postgres' ]; then
 			echo "Granting access to database \"${DB_NAME}\" for user \"${DB_USER}\"..."
 			echo "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME to ${DB_USER};" |
 				sudo -u postgres -H postgres --single -D "$PGDATA"  >/dev/null
+
+			if [ -n "$DB_SCHEMA" -a "$DB_SCHEMA" != 'public' ]; then
+				echo "CREATE SCHEMA ${DB_SCHEMA} for DB ${DB_NAME}"
+				echo "CREATE SCHEMA ${DB_SCHEMA} AUTHORIZATION ${DB_USER};" |
+					sudo -u postgres -H postgres --single -D "$PGDATA" ${DB_NAME} >/dev/null
+			fi
 		fi
 
 
