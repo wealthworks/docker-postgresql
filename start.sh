@@ -2,6 +2,8 @@
 set -e
 
 if [ "$1" = 'postgres' ]; then
+	[ -z "$PGDATA" ] && echo "PGDATA not set" && exit 1
+	[ -d "$PGDATA" ] || mkdir -p "$PGDATA"
 	chown -R postgres "$PGDATA"
 
 	# chmod g+s /var/run/postgresql
