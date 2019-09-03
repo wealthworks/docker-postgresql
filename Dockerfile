@@ -1,10 +1,11 @@
-FROM alpine:edge
+FROM alpine:3.6
 MAINTAINER Eagle Liut <eagle@dantin.me>
 
-ENV LANG en_US.utf8
-ENV PG_HOME "/var/lib/postgresql"
-ENV PG_INITDB_OPTS "--encoding=UTF8 --locale=en_US.UTF-8 --auth=trust"
-ENV PG_MAJOR 9.5
+ENV PG_MAJOR="9.6" \
+    PG_HOME="/var/lib/postgresql" \
+    LANG="en_US.utf8" \
+    PG_INITDB_OPTS="--encoding=UTF8 --locale=en_US.UTF-8 --auth=trust"
+
 ENV PGDATA $PG_HOME/$PG_MAJOR/data
 
 RUN apk add --update bash gzip su-exec postgresql postgresql-contrib postgresql-client \
