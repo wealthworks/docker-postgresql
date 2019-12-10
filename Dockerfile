@@ -1,7 +1,7 @@
-FROM alpine:3.6
+FROM alpine:3.10
 MAINTAINER Eagle Liut <eagle@dantin.me>
 
-ENV PG_MAJOR="9.6" \
+ENV PG_MAJOR="11.6" \
     PG_HOME="/var/lib/postgresql" \
     LANG="en_US.utf8" \
     PG_INITDB_OPTS="--encoding=UTF8 --locale=en_US.UTF-8 --auth=trust"

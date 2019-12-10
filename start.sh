@@ -10,8 +10,9 @@ if [ "$1" = 'postgres' ]; then
 	[ -d "$PGDATA" ] || mkdir -p "$PGDATA"
 	chown -R postgres:postgres "$PGDATA"
 
-	# chmod g+s /var/run/postgresql
-	# chown -R postgres:postgres /var/run/postgresql
+	[ -d /run/postgresql ] || mkdir -p /run/postgresql
+	chmod g+s /run/postgresql
+	chown -R postgres:postgres /run/postgresql
 
 	if [ -z "$(ls -A "$PGDATA")" ]; then
 		# su-exec postgres initdb
@@ -60,6 +61,14 @@ if [ "$1" = 'postgres' ]; then
 		: ${DB_NAME:=$DB_USER}
 
 		psql=( psql -v ON_ERROR_STOP=1 )
+
+		if [ ! -z "$PG_EXTENSIONS" ]; then
+			for ext in $PG_EXTENSIONS; do
+				echo "Creating extension ${ext}"
+				echo "CREATE EXTENSION IF NOT EXISTS ${ext};" |
+					"${psql[@]}" -U postgres template1 >/dev/null
+			done
+		fi
 
 		if [ -n "$DB_USER" -a "$DB_USER" != 'postgres' ]; then
 			echo "Creating user \"${DB_USER}\"..."
