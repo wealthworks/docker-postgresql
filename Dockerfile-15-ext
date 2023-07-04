@@ -1,0 +1,42 @@
+FROM alpine:3.18
+LABEL authors="Eagle Liut <eagle@dantin.me>"
+
+ENV PG_MAJOR="15" \
+    PG_HOME="/var/lib/postgresql" \
+    LANG="en_US.utf8" \
+    PG_INITDB_OPTS="--encoding=UTF8 --locale=en_US.UTF-8 --auth=trust" \
+    SCWS_VERSION=1.2.3 \
+    DB_AUTH_METHOD=scram-sha-256
+
+ENV PGDATA=$PG_HOME/$PG_MAJOR/data
+
+RUN env && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+  && apk add --update bash gzip libpq su-exec postgresql15 postgresql15-contrib postgresql15-client \
+  && rm -rf /var/cache/apk/*
+
+RUN set -eux; \
+  apk add --no-cache --virtual .build-deps \
+    build-base \
+    postgresql15-dev \
+    tar \
+  ;\
+  mkdir build; cd build; \
+  wget -q -O - http://www.xunsearch.com/scws/down/scws-${SCWS_VERSION}.tar.bz2 | tar xjf - ; \
+  wget -q -O - https://github.com/amutu/zhparser/archive/master.tar.gz | tar xzf - ; \
+  cd scws-$SCWS_VERSION ; ./configure ; make install ; cd .. ; \
+  rm -rf scws-$SCWS_VERSION ; \
+  cd zhparser-master ; SCWS_HOME=/usr/local make && make install ; cd .. ; \
+  rm -rf zhparser-master; \
+  \
+  apk del .build-deps; \
+  rm -rf /var/cache/apk/*
+
+
+VOLUME ["$PG_HOME", "/docker-entrypoint-initdb.d"]
+
+ADD start.sh /start.sh
+RUN chmod 755 /start.sh
+
+EXPOSE 5432
+
+CMD ["/start.sh", "postgres"]

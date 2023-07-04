@@ -28,7 +28,7 @@ if [ "$1" = 'postgres' ]; then
 		# messes it up
 		if [ -n "$DB_PASS" ]; then
 			pass="PASSWORD '$DB_PASS'"
-			authMethod=md5
+			authMethod=${DB_AUTH_METHOD:-md5}
 		else
 			# The - option suppresses leading tabs but *not* spaces. :)
 			cat >&2 <<-'EOWARN'
