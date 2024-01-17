@@ -8,6 +8,7 @@ make main && make main-tag
 make v13 && make v13-tag
 make v14 && make v14-tag
 make v15 && make v15-tag
+make v15e && make v15e-tag
 
 ```
 
